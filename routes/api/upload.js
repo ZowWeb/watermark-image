@@ -72,8 +72,33 @@ router.post("/", (req, res) => {
 
       const resizedLogo = logo.resize(image.bitmap.width / 5, Jimp.AUTO);
 
-      const X = (image.bitmap.width - logo.bitmap.width) / 2; //500-100
-      const Y = (image.bitmap.height - logo.bitmap.height) / 2;
+      const cornerWidth = image.bitmap.width - logo.bitmap.width;
+      const cornerHeight = image.bitmap.height - logo.bitmap.height;
+
+      const logoPos = [
+        // Top left
+        { X: 10, Y: 10 },
+        // Top right
+        {
+          X: cornerWidth - 10,
+          Y: 10
+        },
+        // Center
+        {
+          X: cornerWidth / 2,
+          Y: cornerHeight / 2
+        },
+        // Bottom left
+        {
+          X: 10,
+          Y: cornerHeight - 10
+        },
+        // Bottom right
+        {
+          X: cornerWidth - 10,
+          Y: cornerHeight - 10
+        }
+      ];
 
       // TEXT data
       const textData = {
@@ -92,17 +117,19 @@ router.post("/", (req, res) => {
         .then(() => Jimp.read(imgActive))
 
         // COMPOSITE logo into image
-        .then(tpl =>
-          Jimp.read(resizedLogo).then(logoTpl => {
-            logoTpl.opacity(0.2);
-            
-            return tpl.composite(logoTpl, X, Y, {
-              mode: Jimp.BLEND_SOURCE_OVER,
-              opacityDest: 0.5,
-              opacitySource: 0.9
+        .then(tpl => {
+          for (let i = 0; i < logoPos.length; i++) {
+            Jimp.read(resizedLogo).then(logoTpl => {
+
+              tpl.composite(logoTpl, logoPos[i].X, logoPos[i].Y, {
+                mode: Jimp.BLEND_SOURCE_OVER,
+                opacitySource: 0.2,
+                opacityDest: 0.9
+              });
             });
-          })
-        )
+          }
+          return tpl;
+        })
 
         // LOAD font
         .then(tpl =>
